@@ -1,4 +1,4 @@
-package com.xuecheng.content.base.model;
+package com.xuecheng.base.model;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package com.xuecheng.content;
 
-import com.xuecheng.content.base.model.PageParams;
-import com.xuecheng.content.base.model.PageResult;
+import com.xuecheng.base.model.PageParams;
+import com.xuecheng.base.model.PageResult;
 import com.xuecheng.content.mapper.CourseBaseMapper;
 import com.xuecheng.content.model.dto.QueryCourseParamsDto;
 import com.xuecheng.content.model.po.CourseBase;
@@ -28,7 +28,7 @@ public class ContentServiceApplicationTests {
     private CourseBaseInfoService courseBaseInfoService;
 
     @Test
-    void contextLoad() {
+    void contextLoad() {courseBaseInfoService
         CourseBase courseBase = courseBaseMapper.selectById(1);
         Assertions.assertNotNull(courseBase);
     }

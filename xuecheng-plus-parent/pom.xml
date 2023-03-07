@@ -1,4 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [
+		<!ELEMENT project (modelVersion|groupId|artifactId|version|name|description|packaging|properties|dependencyManagement|build)*>
+		<!ATTLIST project
+				xmlns CDATA #REQUIRED
+				xmlns:xsi CDATA #REQUIRED
+				xsi:schemaLocation CDATA #REQUIRED>
+		<!ELEMENT modelVersion (#PCDATA)>
+		<!ELEMENT groupId (#PCDATA)>
+		<!ELEMENT artifactId (#PCDATA)>
+		<!ELEMENT version (#PCDATA)>
+		<!ELEMENT name (#PCDATA)>
+		<!ELEMENT description (#PCDATA)>
+		<!ELEMENT packaging (#PCDATA)>
+		<!ELEMENT properties (java.version|project.build.sourceEncoding|project.reporting.outputEncoding|spring-boot.version|spring-cloud.version|org.mapstruct.version|spring-cloud-alibaba.version|org.projectlombok.version|javax.servlet-api.version|fastjson.version|druid-spring-boot-starter.version|mysql-connector-java.version|mybatis-plus-boot-starter.version|commons-lang.version|minio.version|xxl-job-core.version|swagger-annotations.version|commons-lang3.version|okhttp.version|swagger-spring-boot-starter.version|elasticsearch.version)*>
+		<!ELEMENT java.version (#PCDATA)>
+		<!ELEMENT project.build.sourceEncoding (#PCDATA)>
+		<!ELEMENT project.reporting.outputEncoding (#PCDATA)>
+		<!ELEMENT spring-boot.version (#PCDATA)>
+		<!ELEMENT spring-cloud.version (#PCDATA)>
+		<!ELEMENT org.mapstruct.version (#PCDATA)>
+		<!ELEMENT spring-cloud-alibaba.version (#PCDATA)>
+		<!ELEMENT org.projectlombok.version (#PCDATA)>
+		<!ELEMENT javax.servlet-api.version (#PCDATA)>
+		<!ELEMENT fastjson.version (#PCDATA)>
+		<!ELEMENT druid-spring-boot-starter.version (#PCDATA)>
+		<!ELEMENT mysql-connector-java.version (#PCDATA)>
+		<!ELEMENT mybatis-plus-boot-starter.version (#PCDATA)>
+		<!ELEMENT commons-lang.version (#PCDATA)>
+		<!ELEMENT minio.version (#PCDATA)>
+		<!ELEMENT xxl-job-core.version (#PCDATA)>
+		<!ELEMENT swagger-annotations.version (#PCDATA)>
+		<!ELEMENT commons-lang3.version (#PCDATA)>
+		<!ELEMENT okhttp.version (#PCDATA)>
+		<!ELEMENT swagger-spring-boot-starter.version (#PCDATA)>
+		<!ELEMENT elasticsearch.version (#PCDATA)>
+		<!ELEMENT dependencyManagement (dependencies)*>
+		<!ELEMENT dependencies (dependency)*>
+		<!ELEMENT dependency (groupId|artifactId|version|type|scope|exclusions)*>
+		<!ELEMENT type (#PCDATA)>
+		<!ELEMENT scope (#PCDATA)>
+		<!ELEMENT exclusions (exclusion)*>
+		<!ELEMENT exclusion (groupId|artifactId)*>
+		<!ELEMENT build (plugins)*>
+		<!ELEMENT plugins (plugin)*>
+		<!ELEMENT plugin (groupId|artifactId|version|configuration)*>
+		<!ELEMENT configuration (source|target)*>
+		<!ELEMENT source (#PCDATA)>
+		<!ELEMENT target (#PCDATA)>
+		]>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -187,6 +236,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>2.6.6</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
