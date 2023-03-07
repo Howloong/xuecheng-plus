@@ -1,11 +1,12 @@
 package com.xuecheng.content.model.dto;
 
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 
 /**
  * @description 添加课程dto

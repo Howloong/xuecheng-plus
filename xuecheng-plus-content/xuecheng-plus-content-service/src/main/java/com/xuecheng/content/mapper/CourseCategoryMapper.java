@@ -7,13 +7,13 @@ import com.xuecheng.content.model.po.CourseCategory;
 import java.util.List;
 
 /**
- * <p>
- * 课程分类 Mapper 接口
- * </p>
- *
- * @author itcast
+ * @ClassName: CourseCategoryMapper
+ * @Package: com.xuecheng.content.mapper
+ * @Description:
+ * @Datetime: 2023/2/22   15:19
+ * @Author: YuHan.Kang@outlook.com
  */
 public interface CourseCategoryMapper extends BaseMapper<CourseCategory> {
-
     List<CourseCategoryTreeDto> selectTreeNodes(String id);
+
 }

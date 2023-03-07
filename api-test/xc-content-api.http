@@ -9,6 +9,8 @@ Content-Type: application/json
 }
 ### 新增课程接口
 
+GET {{content_host}}/content/course-category/tree-nodes
+
 POST {{content_host}}/content/course
 Content-Type: application/json
 
