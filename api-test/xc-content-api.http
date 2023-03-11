@@ -18,7 +18,7 @@ Content-Type: application/json
 
   "mt": "1-1",
   "st": "1-1-1",
-  "name": "测试课程111",
+  "name": "测试课程112",
   "pic": "",
   "teachmode": "200002",
   "users": "初级人员",
@@ -34,3 +34,12 @@ Content-Type: application/json
   "validDays": 365
 }
 
+### 课程查询
+POST {{gateway_host}}/content/course/list?pageNo=1&pageSize=10
+Content-Type: application/json
+
+{
+  "auditStatus": "",
+  "courseName": "",
+  "publishStatus": ""
+}

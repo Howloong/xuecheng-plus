@@ -40,12 +40,12 @@ public class LocalDateTimeConfig {
 
 
     // 配置
-//    @Bean
-//    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-//        return builder -> {
-//            builder.serializerByType(LocalDateTimeConfig.class, localDateTimeSerializer());
-//            builder.deserializerByType(LocalDateTimeConfig.class, localDateTimeDeserializer());
-//        };
-//    }
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
+        return builder -> {
+            builder.serializerByType(LocalDateTimeConfig.class, localDateTimeSerializer());
+            builder.deserializerByType(LocalDateTimeConfig.class, localDateTimeDeserializer());
+        };
+    }
 
 }
