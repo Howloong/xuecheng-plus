@@ -1,0 +1,9 @@
+### 上传文件
+POST {{media_host}}/media/upload/coursefile
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="filedata"; filename="widget-timg.jpeg"
+Content-Type: application/octet-stream
+
+< C:/Users/KangYuHan/Desktop/Snipaste_2023-02-28_19-42-01.png
