@@ -3,6 +3,7 @@ package com.xuecheng.media.api;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
+import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 
 /**
  * @author Mr.M
@@ -35,6 +37,7 @@ public class MediaFilesController {
     @ApiOperation("媒资列表查询接口")
     @PostMapping("/files")
     public PageResult<MediaFiles> list(PageParams pageParams, @RequestBody QueryMediaParamsDto queryMediaParamsDto) {
+
         Long companyId = 1232141425L;
         return mediaFileService.queryMediaFiels(companyId, pageParams, queryMediaParamsDto);
 
@@ -44,6 +47,7 @@ public class MediaFilesController {
     public UploadFileResultDto upload(@RequestPart("filedata") MultipartFile filedata,
                                       @RequestParam(value = "folder",required=false) String folder,
                                       @RequestParam(value= "objectName",required=false) String objectName) {
+
 
         Long companyId = 1232141425L;
         UploadFileParamsDto uploadFileParamsDto = new UploadFileParamsDto();
@@ -63,9 +67,16 @@ public class MediaFilesController {
         } catch (Exception e) {
             XueChengPlusException.cast("上传文件过程中出错");
         }
-
         return uploadFileResultDto;
 
+    }
+
+    @ApiOperation("预览文件")
+    @GetMapping("/preview/{mediaId}")
+    public RestResponse<String> getPlayUrlByMediaId(@PathVariable String mediaId){
+        //调用service查询文件的url
+        MediaFiles mediaFiles = mediaFileService.getFileById(mediaId);
+        return RestResponse.success(mediaFiles.getUrl());
     }
 
 }

@@ -37,4 +37,6 @@ public interface MediaFileProcessService {
      * @date 2022/10/15 11:29
      */
     void saveProcessFinishStatus(Long taskId, String status, String fileId, String url, String errorMsg);
+
+    boolean startTask(long id);
 }

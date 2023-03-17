@@ -7,8 +7,6 @@ import com.xuecheng.media.service.MediaFileService;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -39,8 +37,8 @@ public class VideoTask {
     /**
      * 视频处理任务
      */
-    @XxlJob("videoJobHander")
-    public void videoJobHander() throws Exception {
+    @XxlJob("videoJobHandler")
+    public void videoJobHandler() throws Exception {
         // 分片序号，从0开始
         int shardIndex = XxlJobHelper.getShardIndex();
         // 分片总数
@@ -49,9 +47,9 @@ public class VideoTask {
         //查询待处理任务,一次处理的任务数和cpu核心数一样
         List<MediaProcess> mediaProcessList = mediaFileProcessService.getMediaProcessList(shardIndex, shardTotal, 2);
 
-        if(mediaProcessList==null || mediaProcessList.size()<=0){
+        if (mediaProcessList == null || mediaProcessList.size() == 0) {
             log.debug("查询到的待处理视频任务为0");
-            return ;
+            return;
         }
         //要处理的任务数
         int size = mediaProcessList.size();
@@ -63,14 +61,14 @@ public class VideoTask {
 
         //遍历mediaProcessList，将任务放入线程池
         mediaProcessList.forEach(mediaProcess -> {
-            threadPool.execute(()->{
+            threadPool.execute(() -> {
                 //视频处理状态
                 String status = mediaProcess.getStatus();
                 //保证幂等性
-                if("2".equals(status)){
-                    log.debug("视频已经处理不用再次处理,视频信息:{}",mediaProcess);
+                if ("2".equals(status)) {
+                    log.debug("视频已经处理不用再次处理,视频信息:{}", mediaProcess);
                     countDownLatch.countDown();//计数器减1
-                    return ;
+                    return;
                 }
                 //桶
                 String bucket = mediaProcess.getBucket();
@@ -96,50 +94,49 @@ public class VideoTask {
                 }
                 try {
                     //将原始视频下载到本地
-                    mediaFileService.downloadFileFromMinIO(originalFile,bucket,filePath);
+                    mediaFileService.downloadFileFromMinIO(originalFile, bucket, filePath);
                 } catch (Exception e) {
-                    log.error("下载源始文件过程出错:{},文件信息:{}",e.getMessage(),mediaProcess);
+                    log.error("下载源始文件过程出错:{},文件信息:{}", e.getMessage(), mediaProcess);
                     countDownLatch.countDown();//计数器减1
-                    return ;
+                    return;
                 }
 
                 //调用工具类将avi转成mp4
 
                 //转换后mp4文件的名称
-                String mp4_name = fileId+".mp4";
+                String mp4_name = fileId + ".mp4";
                 //转换后mp4文件的路径
                 String mp4_path = mp4File.getAbsolutePath();
                 //创建工具类对象
-                Mp4VideoUtil videoUtil = new Mp4VideoUtil(ffmpegpath,originalFile.getAbsolutePath(),mp4_name,mp4_path);
+                Mp4VideoUtil videoUtil = new Mp4VideoUtil(ffmpegpath, originalFile.getAbsolutePath(), mp4_name, mp4_path);
                 //开始视频转换，成功将返回success,失败返回失败原因
                 String result = videoUtil.generateMp4();
-                String statusNew ="3";
+                String statusNew = "3";
                 String url = null;//最终访问路径
-                if("success".equals(result)){
+                if ("success".equals(result)) {
                     //转换成功
                     //上传到minio的路径
                     String objectName = getFilePath(fileId, ".mp4");
                     try {
                         //上传到minIO
-                        mediaFileService.addMediaFilesToMinIO(mp4_path,bucket,objectName);
+                        mediaFileService.addMediaFilesToMinIO(mp4_path, bucket, objectName);
                     } catch (Exception e) {
-                        log.debug("上传文件出错:{}",e.getMessage());
+                        log.debug("上传文件出错:{}", e.getMessage());
                         countDownLatch.countDown();//计数器减1
-                        return ;
+                        return;
                     }
                     statusNew = "2";//处理成功
-                    url = "/"+bucket+"/"+objectName;
+                    url = "/" + bucket + "/" + objectName;
 
                 }
 
-
                 try {
                     //记录任务处理结果
-                    mediaFileProcessService.saveProcessFinishStatus(mediaProcess.getId(),statusNew,fileId,url,result);
+                    mediaFileProcessService.saveProcessFinishStatus(mediaProcess.getId(), statusNew, fileId, url, result);
                 } catch (Exception e) {
-                    log.debug("保存任务处理结果出错:{}",e.getMessage());
+                    log.debug("保存任务处理结果出错:{}", e.getMessage());
                     countDownLatch.countDown();//计数器减1
-                    return ;
+                    return;
                 }
 
                 //计数器减去1
@@ -153,10 +150,9 @@ public class VideoTask {
         countDownLatch.await(30, TimeUnit.MINUTES);
 
 
-
     }
 
-    private String getFilePath(String fileMd5,String fileExt){
-        return   fileMd5.substring(0,1) + "/" + fileMd5.substring(1,2) + "/" + fileMd5 + "/" +fileMd5 +fileExt;
+    private String getFilePath(String fileMd5, String fileExt) {
+        return fileMd5.charAt(0) + "/" + fileMd5.substring(1, 2) + "/" + fileMd5 + "/" + fileMd5 + fileExt;
     }
 }

@@ -9,12 +9,17 @@ import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.mapper.MediaFilesMapper;
+import com.xuecheng.media.mapper.MediaProcessMapper;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
+import com.xuecheng.media.model.po.MediaProcess;
 import com.xuecheng.media.service.MediaFileService;
-import io.minio.*;
+import io.minio.GetObjectArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.UploadObjectArgs;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -29,8 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -46,6 +49,9 @@ public class MediaFileServiceImpl implements MediaFileService {
 
     @Autowired
     MediaFilesMapper mediaFilesMapper;
+
+    @Autowired
+    MediaProcessMapper mediaProcessMapper;
 
     @Autowired
     MinioClient minioClient;
@@ -75,7 +81,8 @@ public class MediaFileServiceImpl implements MediaFileService {
         // 获取数据总数
         long total = pageResult.getTotal();
         // 构建结果集
-        return new PageResult<>(list, total, pageParams.getPageNo(), pageParams.getPageSize());
+        PageResult<MediaFiles> mediaListResult = new PageResult<>(list, total, pageParams.getPageNo(), pageParams.getPageSize());
+        return mediaListResult;
 
     }
 
@@ -90,7 +97,7 @@ public class MediaFileServiceImpl implements MediaFileService {
         if (StringUtils.isEmpty(folder)) {
             //自动生成目录的路径 按年月日生成，
             folder = getFileFolder(new Date(), true, true, true);
-        } else if (!folder.contains("/")) {
+        } else if (folder.indexOf("/") < 0) {
             folder = folder + "/";
         }
         //文件名称
@@ -220,23 +227,48 @@ public class MediaFileServiceImpl implements MediaFileService {
             mediaFiles.setCompanyId(companyId);
             mediaFiles.setBucket(bucket);
             mediaFiles.setFilePath(objectName);
-            mediaFiles.setUrl("/" + bucket + "/" + objectName);
+
+            //获取扩展名
+            String extension = null;
+            String filename = uploadFileParamsDto.getFilename();
+            if (StringUtils.isNotEmpty(filename) && filename.contains(".")) {
+                extension = filename.substring(filename.lastIndexOf("."));
+            }
+            //媒体类型
+            String mimeType = getMimeTypeByextension(extension);
+            //图片、mp4视频可以设置URL
+            if (mimeType.contains("image") || mimeType.contains("mp4")) {
+                mediaFiles.setUrl("/" + bucket + "/" + objectName);
+            }
+
             mediaFiles.setCreateDate(LocalDateTime.now());
             mediaFiles.setStatus("1");
             mediaFiles.setAuditStatus("002003");
 
 
             //插入文件表
-            mediaFilesMapper.insert(mediaFiles);
-
-            //抛出异常,制造异常
-//            int i=1/0;
-
+            int insert = mediaFilesMapper.insert(mediaFiles);
+            if (insert <= 0) {
+                return null;
+            }
+            addWaitingTask(mediaFiles);
 
         }
         return mediaFiles;
     }
 
+    private void addWaitingTask(MediaFiles mediaFiles) {
+        String filename = mediaFiles.getFilename();
+        String extension = filename.substring(filename.lastIndexOf("."));
+        String mimeType = getMimeTypeByextension(extension);
+        if (mimeType.equals("video/x-msvideo")) {
+            MediaProcess mediaProcess = new MediaProcess();
+            BeanUtils.copyProperties(mediaFiles, mediaProcess);
+            //设置一个状态
+            mediaProcess.setStatus("1");//未处理
+            mediaProcessMapper.insert(mediaProcess);
+        }
+    }
     @Override
     public RestResponse<Boolean> checkFile(String fileMd5) {
 
@@ -379,16 +411,32 @@ public class MediaFileServiceImpl implements MediaFileService {
                 }
             }
             //删除合并的临时文件
-            if(tempMergeFile!=null){
+            if (tempMergeFile != null) {
                 tempMergeFile.delete();
             }
 
 
         }
     }
-    private String getFilePathByMd5(String fileMd5,String fileExt){
-        return   fileMd5.substring(0,1) + "/" + fileMd5.substring(1,2) + "/" + fileMd5 + "/" +fileMd5 +fileExt;
+
+    @Override
+    public MediaFiles getFileById(String id) {
+        MediaFiles mediaFiles = mediaFilesMapper.selectById(id);
+        if (mediaFiles == null) {
+            XueChengPlusException.cast("文件不存在");
+        }
+        String url = mediaFiles.getUrl();
+        if (StringUtils.isEmpty(url)) {
+            XueChengPlusException.cast("文件还没有处理，请稍后预览");
+        }
+
+        return mediaFiles;
     }
+
+    private String getFilePathByMd5(String fileMd5, String fileExt) {
+        return fileMd5.substring(0, 1) + "/" + fileMd5.substring(1, 2) + "/" + fileMd5 + "/" + fileMd5 + fileExt;
+    }
+
     /**
      * @description 下载分块
      * @param fileMd5
@@ -449,7 +497,7 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     //将文件上传到文件系统
-    private void addMediaFilesToMinIO(String filePath, String bucket, String objectName){
+    public void addMediaFilesToMinIO(String filePath, String bucket, String objectName) {
         try {
             UploadObjectArgs uploadObjectArgs = UploadObjectArgs.builder()
                     .bucket(bucket)
@@ -458,7 +506,7 @@ public class MediaFileServiceImpl implements MediaFileService {
                     .build();
             //上传
             minioClient.uploadObject(uploadObjectArgs);
-            log.debug("文件上传成功:{}",filePath);
+            log.debug("文件上传成功:{}", filePath);
         } catch (Exception e) {
             XueChengPlusException.cast("文件上传到文件系统失败");
         }
@@ -499,6 +547,19 @@ public class MediaFileServiceImpl implements MediaFileService {
         }
     }
 
+    //根据扩展名拿匹配的媒体类型
+    private String getMimeTypeByextension(String extension) {
+        //资源的媒体类型
+        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;//默认未知二进制流
+        if (StringUtils.isNotEmpty(extension)) {
+            ContentInfo extensionMatch = ContentInfoUtil.findExtensionMatch(extension);
+            if (extensionMatch != null) {
+                contentType = extensionMatch.getMimeType();
+            }
+        }
+        return contentType;
+    }
+
     //根据日期拼接目录
     private String getFileFolder(Date date, boolean year, boolean month, boolean day) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -522,11 +583,4 @@ public class MediaFileServiceImpl implements MediaFileService {
         return folderString.toString();
     }
 
-    public static void main(String[] args) {
-        String extension = ".jpg";
-        ContentInfo extensionMatch = ContentInfoUtil.findExtensionMatch(extension);
-        if (extensionMatch != null) {
-            System.out.println(extensionMatch.getMimeType());
-        }
-    }
 }
